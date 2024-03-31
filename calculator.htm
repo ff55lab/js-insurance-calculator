@@ -98,7 +98,7 @@
             // JPJ Road Tax
             var insureRoadTax = 0.0;
             if (cc <= 150.0)
-                insureRoadTax = 40.0;
+                insureRoadTax = 4.0;
             else if (cc <= 200.0)
                 insureRoadTax = 30.0;
             else if (cc <= 250.0)
@@ -135,11 +135,29 @@
             // Shop Service Charge
             var insureServiceCharge = charge;
 
-            var insurePremium = insurePremiumVehicle + insurePremiumPA;
+            // Real roadtax
+            var realRoadtax = 0.0;
+            // JPJ Road Tax
+            if (cc <= 150.0)
+                realRoadtax = 2.0;
+            else if (cc <= 200.0)
+                realRoadtax = 30.0;
+            else if (cc <= 250.0)
+                realRoadtax = 50.0;
+            else if (cc <= 500.0)
+                realRoadtax = 180.0;
+            else if (cc <= 800.0)
+                realRoadtax = 250.0;
+            else
+                realRoadtax = 350.0;
+
+
+
+            var insurePremium = insurePremiumVehicle + insurePremiumPA + insureRoadTax - realRoadtax;
             var total = insurePremiumVehicle + insurePremiumPA + insureRoadTax + insureServiceCharge;
 
             var uiP = (Math.round(insurePremium * 100.0) / 100.0).toFixed(2);
-            var uiR = (Math.round(insureRoadTax * 100.0) / 100.0).toFixed(2);
+            var uiR = (Math.round(realRoadtax * 100.0) / 100.0).toFixed(2);
             var uiS = (Math.round(insureServiceCharge * 100.0) / 100.0).toFixed(2);
             var uiT = (Math.round(total * 100.0) / 100.0).toFixed(2);
 
