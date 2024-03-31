@@ -1,0 +1,298 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <script src="https://unpkg.com/pdf-lib@1.4.0"></script>
+    <script src="https://unpkg.com/downloadjs@1.4.7"></script>
+
+    <script>
+
+        function calcPremium(all, first, cc, year, price, ncd, pa, charge, tax) {
+            const premiumRate1stParty = 17.0;
+            const premiumStampDuty = 10.0;
+            const currentYear = new Date().getFullYear();
+            const paRate = 13.0;
+            const paRateSpecial = 26.0; // For Single Rider Less Than or Equal to 20k PA
+            const paStampDuty = 10.0;
+
+
+
+            var insurePremiumVehicle = 0.0;
+            var premiumChargeBasedOnCC = 0.0;
+            if (first) {
+                // 1st Party
+                if (cc <= 50)
+                    premiumChargeBasedOnCC = 72.6;
+                else if (cc <= 100)
+                    premiumChargeBasedOnCC = 96.2;
+                else if (cc <= 125)
+                    premiumChargeBasedOnCC = 119.8;
+                else if (cc <= 225)
+                    premiumChargeBasedOnCC = 138.4;
+                else if (cc <= 350)
+                    premiumChargeBasedOnCC = 180.1;
+                else if (cc <= 500)
+                    premiumChargeBasedOnCC = 210.1;
+                else
+                    premiumChargeBasedOnCC = 239.7;
+
+                var chargeablePremium = price - 1000.0;
+                if (chargeablePremium < 1000.0) chargeablePremium = 1000.0;
+
+                insurePremiumVehicle = (premiumRate1stParty * chargeablePremium / 1000.0) + premiumChargeBasedOnCC;
+
+            }
+            else {
+                // 3rd Party
+                if (cc <= 50)
+                    premiumChargeBasedOnCC = 30.6;
+                else if (cc <= 100)
+                    premiumChargeBasedOnCC = 36.6;
+                else if (cc <= 125)
+                    premiumChargeBasedOnCC = 41.3;
+                else if (cc <= 225)
+                    premiumChargeBasedOnCC = 50.7;
+                else if (cc <= 350)
+                    premiumChargeBasedOnCC = 64.3;
+                else if (cc <= 500)
+                    premiumChargeBasedOnCC = 73.6;
+                else
+                    premiumChargeBasedOnCC = 82.6;
+
+                var premiumYearRange = currentYear - year;
+                var premiumYearChargePercentage = 0.0;
+
+                if (premiumYearRange <= 3)
+                    premiumYearChargePercentage = 150.0; // Additional 25% + 25%
+                else if (premiumYearRange <= 6)
+                    premiumYearChargePercentage = 175.0; // Additional 50% + 25%
+                else if (premiumYearRange <= 10)
+                    premiumYearChargePercentage = 200.0; // Additional 75% + 25%
+                else
+                    premiumYearChargePercentage = 225.0; // Additional 100% + 25%
+
+                insurePremiumVehicle = premiumChargeBasedOnCC * premiumYearChargePercentage / 100.0;
+
+            }
+
+
+            // All Riders
+            if (all)
+                insurePremiumVehicle = (insurePremiumVehicle * 1.5);
+
+            // Premium NCD
+            insurePremiumVehicle = insurePremiumVehicle * (100.0 - ncd) / 100.0;
+
+            // Government Tax
+            insurePremiumVehicle = insurePremiumVehicle * (100.0 + tax) / 100.0;
+
+            // Premium Stamp Duty
+            insurePremiumVehicle += premiumStampDuty;
+
+            // Super Bike - Add additional 10%
+            if (cc > 200) {
+                insurePremiumVehicle = (insurePremiumVehicle * 1.1);
+            }
+
+
+
+            // JPJ Road Tax
+            var insureRoadTax = 0.0;
+            if (cc <= 150.0)
+                insureRoadTax = 40.0;
+            else if (cc <= 200.0)
+                insureRoadTax = 30.0;
+            else if (cc <= 250.0)
+                insureRoadTax = 50.0;
+            else if (cc <= 500.0)
+                insureRoadTax = 180.0;
+            else if (cc < 800.0)
+                insureRoadTax = 250.0;
+            else
+                insureRoadTax = 350.0;
+
+
+
+
+
+            // Personal Accident Premium
+            var insurePremiumPA = 0.0;
+            var useSpecialRate = (!all && pa <= 20000.0);
+            if (first) {
+                var chargeablePA = (pa - (pa % 5000.0));
+                if (chargeablePA < 5000.0) chargeablePA = 5000.0;
+
+                insurePremiumPA = (useSpecialRate ? paRateSpecial : paRate) * chargeablePA / 5000.0;
+            }
+            else {
+                insurePremiumPA = (useSpecialRate ? paRateSpecial : paRate);
+            }
+
+            // Government Tax
+            insurePremiumPA = insurePremiumPA * (100.0 + tax) / 100.0;
+
+
+
+            // Shop Service Charge
+            var insureServiceCharge = charge;
+
+            var insurePremium = insurePremiumVehicle + insurePremiumPA;
+            var total = insurePremiumVehicle + insurePremiumPA + insureRoadTax + insureServiceCharge;
+
+            var uiP = (Math.round(insurePremium * 100.0) / 100.0).toFixed(2);
+            var uiR = (Math.round(insureRoadTax * 100.0) / 100.0).toFixed(2);
+            var uiS = (Math.round(insureServiceCharge * 100.0) / 100.0).toFixed(2);
+            var uiT = (Math.round(total * 100.0) / 100.0).toFixed(2);
+
+            if (all) {
+                if (first) {
+                    document.getElementById("a1p").textContent = uiP;
+                    document.getElementById("a1r").textContent = uiR;
+                    document.getElementById("a1s").textContent = uiS;
+                    document.getElementById("a1t").textContent = uiT;
+                }
+                else {
+                    document.getElementById("a3p").textContent = uiP;
+                    document.getElementById("a3r").textContent = uiR;
+                    document.getElementById("a3s").textContent = uiS;
+                    document.getElementById("a3t").textContent = uiT;
+                }
+            }
+            else {
+                if (first) {
+                    document.getElementById("s1p").textContent = uiP;
+                    document.getElementById("s1r").textContent = uiR;
+                    document.getElementById("s1s").textContent = uiS;
+                    document.getElementById("s1t").textContent = uiT;
+                }
+                else {
+                    document.getElementById("s3p").textContent = uiP;
+                    document.getElementById("s3r").textContent = uiR;
+                    document.getElementById("s3s").textContent = uiS;
+                    document.getElementById("s3t").textContent = uiT;
+                }
+            }
+        }
+
+        function calculate() {
+            var cc = parseFloat(document.getElementById("vehicleCc").value);
+            var year = parseFloat(document.getElementById("vehicleYear").value);
+            var price = parseFloat(document.getElementById("toInsurePrice").value);
+            var ncd = parseFloat(document.getElementById("ncdInfo").value);
+            var pa = parseFloat(document.getElementById("toInsurePA").value);
+            var charge = parseFloat(document.getElementById("serviceCharge").value);
+            var tax = parseFloat(document.getElementById("governmentTax").value);
+
+            if (price < 2000.0) price = 2000.0;
+            if (ncd < 0.0) ncd = 0.0;
+            if (pa < 5000.0) pa = 5000.0;
+            if (cc < 1.0) cc = 1.0;
+            if (year < 1.0) year = 1.0;
+            if (charge < 0.0) charge = 0.0;
+            if (tax < 0.0) tax = 0.0;
+            
+            calcPremium(true, true, cc, year, price, ncd, pa, charge, tax);
+            calcPremium(true, false, cc, year, price, ncd, pa, charge, tax);
+            calcPremium(false, true, cc, year, price, ncd, pa, charge, tax);
+            calcPremium(false, false, cc, year, price, ncd, pa, charge, tax);
+        }
+
+    </script>
+</head>
+
+<body>
+    <div>
+        <label for="vehicleCc">Vehicle CC</label><br>
+        <input type="number" id="vehicleCc" size="60" value="250">
+    </div>
+    <div>
+        <label for="vehicleYear">Vehicle year manufacture</label><br>
+        <input type="number" id="vehicleYear" size="60" value="2016">
+    </div>
+    <div>
+        <label for="toInsurePrice">Vehicle premium</label><br>
+        <input type="number" id="toInsurePrice" size="60" value="26000">
+    </div>
+    <div>
+        <label for="ncdInfo">NCD (No Claim Discount) % - 0, 15, 20, 25</label><br>
+        <input type="number" id="ncdInfo" size="60" value="0">
+    </div>
+    <div>
+        <label for="toInsurePA">Presonal accident premium</label><br>
+        <input type="number" id="toInsurePA" size="60" value="5000">
+    </div>
+    <div>
+        <label for="serviceCharge">Service charge</label><br>
+        <input type="number" id="serviceCharge" size="60" value="10">
+    </div>
+    <div>
+        <label for="governmentTax">Government tax</label><br>
+        <input type="number" id="governmentTax" size="60" value="8">
+    </div>
+
+    <br />
+    <button onclick="calculate();">Calculate</button>
+    <br />
+    <br />
+    <table width="100%" border="1" style="text-align: right">
+        <tr style="font-weight: bold; text-align: center">
+            <td colspan="3">ALL RIDERS</td>
+        </tr>
+        <tr style="font-weight: bold;">
+            <td>Insure</td>
+            <td>1st party</td>
+            <td>3rd party</td>
+        </tr>
+        <tr>
+            <td>Premium</td>
+            <td><span id="a1p">0.00</span></td>
+            <td><span id="a3p">0.00</span></td>
+        </tr>
+        <tr>
+            <td>Roadtax</td>
+            <td><span id="a1r">0.00</span></td>
+            <td><span id="a3r">0.00</span></td>
+        </tr>
+        <tr>
+            <td>Service charge</td>
+            <td><span id="a1s">0.00</span></td>
+            <td><span id="a3s">0.00</span></td>
+        </tr>
+        <tr style="font-weight: bold;">
+            <td>Total</td>
+            <td><span id="a1t">0.00</span></td>
+            <td><span id="a3t">0.00</span></td>
+        </tr>
+    </table>
+    <br />
+    <table width="100%" border="1" style="text-align: right">
+        <tr style="font-weight: bold; text-align: center">
+            <td colspan="3">SINGLE RIDER</td>
+        </tr>
+        <tr style="font-weight: bold;">
+            <td>Insure</td>
+            <td>1st party</td>
+            <td>3rd party</td>
+        </tr>
+        <tr>
+            <td>Premium</td>
+            <td><span id="s1p">0.00</span></td>
+            <td><span id="s3p">0.00</span></td>
+        </tr>
+        <tr>
+            <td>Roadtax</td>
+            <td><span id="s1r">0.00</span></td>
+            <td><span id="s3r">0.00</span></td>
+        </tr>
+        <tr>
+            <td>Service charge</td>
+            <td><span id="s1s">0.00</span></td>
+            <td><span id="s3s">0.00</span></td>
+        </tr>
+        <tr style="font-weight: bold;">
+            <td>Total</td>
+            <td><span id="s1t">0.00</span></td>
+            <td><span id="s3t">0.00</span></td>
+        </tr>
+    </table>
+</body>
+</html>
